@@ -5,7 +5,9 @@
 #Liu Ying-S11188808
 
 rm(list = ls())
+
 ############# Load Libraries ######################################################################
+
 library(readxl)#read cvs file
 library(tidyverse)
 library(ggplot2)#in order to plot graphs later on
@@ -14,6 +16,7 @@ library(MASS)#for build ordinal regression model
 library(tidymodels)
 library(pROC)# roc plot
 library(ggrepel)
+
 ############## Loading Data #########################################
 getwd()
 setwd("/Users/roska/Downloads")
@@ -78,6 +81,8 @@ str(data)
 View(data)
 head(data)
 summary(data)
+
+# ---- Output ----
 # students:145
 # 18-21:65;22-25:70; above 26:10
 # female: 58; male:87
@@ -91,6 +96,7 @@ summary(data)
 #MSc.            : 2      MSc.            : 5              
 #Ph.D.           : 2      Ph.D.           : 1 
 
+
 #######General analysis of students grades#######
 #General analysis of students grades
 Grade_counts <- data %>%
@@ -100,6 +106,7 @@ ggplot(Grade_counts, aes(x =`OUTPUT Grade` , y = Count)) +
   geom_bar(stat = "identity", fill = "skyblue", color = "black") +
   labs(title = "Student Grades", x = "grades", y = "couts") +
   theme_minimal()#plot the summary grades diagram of students
+
 
 ###########Graduated high school type Vs students grades#######
 #Research Question 1: Does the type of high school (private, state, or other) 

@@ -1,0 +1,615 @@
+---
+title: "IS302 Semester 2 2023 (Broncos Group)"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+#This is just an attempt to do the dashboard but since we had to do a lot of changes in our report and other code #there was not enough time to do it as we couldnt implement any scrolling features and such
+library(flexdashboard)
+library(tidyverse)
+library(highcharter)
+library(gt)
+library(htmltools)
+library(viridis)
+library(ggplot2)
+library(readr)
+library(broom)
+library(MASS)
+library(tidymodels)
+library(pROC)
+library(ggrepel)
+library(dplyr)
+library(olsrr)
+```
+
+```{r}
+# Data Processing
+getwd()
+data <- read_csv('studentdata.csv') #student performance Data
+
+data <- data %>%
+  rename(
+    `Student ID` = 1,
+    `Student Age` = 2,
+    `Sex` = 3,
+    `Graduated high-school type` = 4,
+    `Scholarship type` = 5,
+    `Additional work` = 6,
+    `Regular artistic or sports activity` = 7,
+    `Do you have a partner` = 8,
+    `Total salary if available` = 9,
+    `Transportation to the university` = 10,
+    `Accommodation type in Cyprus` = 11,
+    `Mothers education` = 12,
+    `Fathers education` = 13,
+    `Number of sisters/brothers` = 14,
+    `Parental status` = 15,
+    `Mothers occupation` = 16,
+    `Fathers occupation` = 17,
+    `Weekly study hours` = 18,
+    `Reading frequency` = 19,
+    `Reading frequency(scientific books/journals)` = 20,
+    `Attendance to the seminars/conferences related to the department` = 21,
+    `Impact of your projects/activities on your success` = 22,
+    `Attendance to classes` = 23,
+    `Preparation to midterm exams 1` = 24,
+    `Preparation to midterm exams 2` = 25,
+    `Taking notes in classes` = 26,
+    `Listening in classes` = 27,
+    `Discussion improves my interest and success in the course` = 28,
+    `Flip-classroom` = 29,
+    `Cumulative grade point average in the last semester (/4.00)` = 30,
+    `Expected Cumulative grade point average in the graduation (/4.00)` = 31,
+    `Course ID` = 32,
+    `OUTPUT Grade` = 33
+  )
+
+data$`Student Age`<-factor(data$`Student Age`,c("1","2","3"),labels = c("18-21","22-25","above 26"))
+data$Sex <- factor(data$Sex,c("1", "2"), labels = c( "Female","Male"))
+data$`Graduated high-school type`<-factor(data$`Graduated high-school type`,c("1","2","3"),labels=c("private","state","other"))
+data$`Additional work`<- factor(data$`Additional work`,c("1", "2"), labels = c( "Yes","No"))
+data$`Regular artistic or sports activity`<-factor(data$`Regular artistic or sports activity`,c("1", "2"), labels = c( "Yes","No"))
+data$`Do you have a partner`<-factor(data$`Do you have a partner`,c("1", "2"), labels = c( "Yes","No"))
+data$`Transportation to the university`<-factor(data$`Transportation to the university`,c("1","2","3","4"),labels = c("Bus","Private car/taxi","bicycle","Other"))
+data$`Accommodation type in Cyprus`<-factor(data$`Accommodation type in Cyprus`,c("1","2","3","4"),labels = c("rental", "dormitory","with family","Other"))
+data$`Mothers education`<-factor(data$`Mothers education`,c("1","2","3","4","5","6"),labels = c("primary school","secondary school","high school","university", "MSc.", "Ph.D."))
+data$`Fathers education`<-factor(data$`Fathers education`,c("1","2","3","4","5","6"),labels = c("primary school","secondary school","high school","university", "MSc.", "Ph.D."))
+data$`Parental status`<-factor(data$`Parental status`,c("1","2","3"),labels = c("married","divorced","died - one of them or both"))
+data$`Mothers occupation`<-factor(data$`Mothers occupation`,c("1","2","3","4","5","6"),labels = c("retired","housewife","government officer", "private sector employee","self-employment","other"))
+data$`Fathers occupation`<-factor(data$`Fathers occupation`,c("1","2","3","4","5"),labels = c("retired","government officer", "private sector employee","self-employment","other"))
+data$`Reading frequency`<-factor(data$`Reading frequency`,c("1","2","3"),labels = c("None","Sometimes","Often"))
+data$`Reading frequency(scientific books/journals)`<-factor(data$`Reading frequency(scientific books/journals)`,c("1","2","3"),labels = c("None","Sometimes","Often"))
+data$`Attendance to the seminars/conferences related to the department`<- factor(data$`Attendance to the seminars/conferences related to the department`,c("1", "2"), labels = c( "Yes","No"))
+data$`Impact of your projects/activities on your success`<- factor(data$`Impact of your projects/activities on your success`,c("1", "2","3"), labels = c( "positive","negative","neutral"))
+data$`Attendance to classes`<- factor(data$`Attendance to classes`,c("1", "2","3"), labels = c( "always","sometimes","never"))
+data$`Preparation to midterm exams 1`<-factor(data$`Preparation to midterm exams 1`,c("1","2","3"),labels = c("alone","with friends","not applicable"))
+data$`Preparation to midterm exams 2`<-factor(data$`Preparation to midterm exams 2`,c("1","2","3"),labels = c("closest date to the exam","regularly during the semester","never"))
+data$`Taking notes in classes`<-factor(data$`Taking notes in classes`,c("1","2","3"),labels=c("never","sometimes","always"))
+data$`Listening in classes`<-factor(data$`Listening in classes`,c("1","2","3"),labels=c("never","sometimes","always"))
+data$`Discussion improves my interest and success in the course`<-factor(data$`Discussion improves my interest and success in the course`,c("1","2","3"),labels=c("never","sometimes","always"))
+data$`Flip-classroom`<-factor(data$`Flip-classroom`,c("1","2","3"),labels = c("not useful","useful","not applicable"))
+data$`OUTPUT Grade`<-factor(data$`OUTPUT Grade`,c("0","1","2","3","4","5","6","7"),labels = c("Fail","DD","DC","CC","CB","BB","BA","AA"))
+write.csv(data, file = "performance1.csv", row.names = FALSE)#save the cvs file after change the name and levels
+```
+
+Student Performance
+==================================================================================================================
+
+## Column {.tabset .tabset-fade data-width="650"}
+
+### High School Type 
+```{r}
+# -- Final GPA vs Graduated High School Type --
+custom_colors = viridis::turbo(n = 3)
+
+data_summary <- data %>%
+  group_by(`OUTPUT Grade`, `Graduated high-school type`) %>%
+  summarise(students = n())
+
+
+hchart(data_summary, 'column', hcaes(x = `OUTPUT Grade`, y = students, group = `Graduated high-school type`))%>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = 'Number of Students: </b> {point.y} <br>') %>%
+  hc_title(text = 'Final GPA vs Graduated High School Type',
+           style = list(fontSize = '25px', fontWeight = 'bold')) %>%
+  hc_credits(enabled = TRUE, text ='@Broncos')
+
+```
+
+### AA & BA Graph and Calculation
+```{r}
+# -- AA & BA Graph and Calculation --
+# AABA variable
+AABA_count <- data %>%
+  filter(`OUTPUT Grade` == "AA" | `OUTPUT Grade` == "BA") %>%
+  group_by(`Graduated high-school type`)%>%
+  summarise(Count = n())
+
+# Calculation for the number of students that graduate from different types of high schools
+School_counts <- data %>%
+  group_by(`Graduated high-school type`) %>%
+  summarise(Total_Count = n())
+
+# Calculation for the ration of students that graduated from different schools with A's
+AABA_Ratio <- left_join(AABA_count, School_counts, by = NULL) %>%
+  mutate(Ratio = Count / Total_Count)
+
+hchart(AABA_Ratio, type = "scatter", hcaes(x = `Graduated high-school type`, y = Ratio, color = custom_colors)) %>%
+  hc_tooltip(pointFormat = 'High School Type: {point.name}<br>AA & BA Grade Ratio: {point.y}') %>%
+  hc_plotOptions(scatter = list(
+    marker = list(radius = 3),
+    dataLabels = list(
+      enabled = TRUE,
+      format = '{point.name}'
+    )
+  )) %>%
+  hc_title(text = "AA & BA Grade Ratio by High School Type") %>%
+  hc_xAxis(categories = unique(AABA_Ratio$`Graduated high-school type`)) %>%
+  hc_yAxis(title = list(text = "AA & BA Grade Ratio")) %>%
+  hc_add_theme(hc_theme_google())
+```
+
+### Grade Distribution by High School Type
+```{r}
+### Grade Distribution by High School Type
+# calculate the number of student of different grades by different school
+grade_counts <- data %>%
+  group_by(`Graduated high-school type`, `OUTPUT Grade`) %>%
+  summarise(Count = n())
+
+# calculate all ration of different grades by different school
+grade_ratios <- grade_counts %>%
+  group_by(`Graduated high-school type`) %>%
+  mutate(Total = sum(Count),
+         Ratio = Count / Total)
+
+
+# Create a high chart plot for grade_ratios with lines connecting the dots
+hchart(grade_ratios, type = "line", hcaes(x = `OUTPUT Grade`, y = Ratio, color = `Graduated high-school type`, group = `Graduated high-school type`)) %>%
+  hc_tooltip(pointFormat = 'Grade: {point.x}<br>Ratio: {point.y}', useHTML = TRUE) %>%
+  hc_plotOptions(line = list(
+    marker = list(radius = 3),
+    dataLabels = list(
+      enabled = TRUE,
+      format = '{point.name}'
+    )
+  )) %>%
+  hc_title(text = "Grade Distribution by High School Type") %>%
+  hc_xAxis(categories = unique(grade_ratios$`OUTPUT Grade`)) %>%
+  hc_yAxis(title = list(text = "Ratio")) %>%
+  hc_add_theme(hc_theme_google())
+
+
+```
+
+### Regular Artistic or Sports Activities
+```{r}
+RA <- data %>% 
+  group_by(`OUTPUT Grade`, `Regular artistic or sports activity`) %>% 
+  summarise(count = n())
+
+hchart(RA, type = "column", hcaes(x = `OUTPUT Grade`, y = count, group = `Regular artistic or sports activity`, color = `Regular artistic or sports activity`)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = 'Count: {point.y}') %>%
+  hc_title(text = 'Final GPA VS Regular Artistic or Sports Activity', style = list(fontSize = '25px', fontWeight = 'bold')) %>%
+  hc_xAxis(title = list(text = 'GPA')) %>%
+  hc_yAxis(title = list(text = 'Count')) %>%
+  hc_legend(title = list(text = 'Regular Artistic or Sports Activity')) %>%
+  hc_plotOptions(column = list(colors = viridis::turbo(n = 2)))
+
+
+```
+
+### Students that engeage in regular artistic or sports activites
+```{r}
+# calculate the number of student that engage in regular artistic or sports activities or not
+sports_counts <- data %>%
+  group_by(`Regular artistic or sports activity`, `OUTPUT Grade`) %>%
+  summarise(Count = n())
+
+# calculate all ration of student GPA that engage in regular artistic or sports activities or not
+sports_ratios <- sports_counts %>%
+  group_by(`Regular artistic or sports activity`) %>%
+  mutate(Total = sum(Count),
+         sportsRatio = Count / Total)
+
+hchart(sports_ratios, "line", hcaes(x = `OUTPUT Grade`, y = sportsRatio, color = `Regular artistic or sports activity`, group = `Regular artistic or sports activity`)) %>%
+  hc_add_theme(hc_theme_google())%>%
+  hc_tooltip(pointFormat = 'Ratio: {point.y:.4f}') %>%
+  hc_title(text = 'Grade Distribution by Engaging in Regular Artistic or Sports Activities', style = list(fontSize = '25px', fontWeight = 'bold')) %>%
+  hc_xAxis(title = list(text = 'Grade')) %>%
+  hc_yAxis(title = list(text = 'Ratio')) %>%
+  hc_legend(title = list(text = 'Regular Artistic or Sports Activity'))
+```
+
+### Parents Education
+```{r}
+ggplot(data, aes(x = `OUTPUT Grade`, fill = `Mothers education`)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Final GPA affect by mother education level",
+       x = "GPA",
+       y = "Count",
+       fill ="mother education" ) +
+  theme_minimal()
+
+ggplot(data, aes(x = `OUTPUT Grade`, fill = `Fathers education`)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Final GPA affect by father education level",
+       x = "GPA",
+       y = "Count",
+       fill ="Father education" ) +
+  theme_minimal()
+
+data$`Mothers education`
+data$`Fathers education`
+data$`OUTPUT Grade`
+
+
+# Combine mother's and father's education levels into a new variable
+data$ParentsEducation <- paste(data$`Mothers education`, data$`Fathers education`, sep="&")
+
+# Convert the Parents Education variable to a factor
+data$ParentsEducation <- as.factor(data$ParentsEducation)
+
+ggplot(data, aes(x = `OUTPUT Grade`  , fill = ParentsEducation)) +
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Final GPA affect by parents education level",
+       x = "GPA",
+       y = "Count",
+       fill ="GPA" ) +
+  theme_minimal() 
+
+# Calculate counts for AA and BA grades based on parents' education level
+PEgrades_count <- data %>%
+  filter(`OUTPUT Grade` %in% c("AA", "BA")) %>%
+  group_by(ParentsEducation, `OUTPUT Grade`) %>%
+  summarise(Count = n())
+
+# Plotting the bar chart
+ggplot(PEgrades_count, aes(x = `OUTPUT Grade`, y = Count, fill = ParentsEducation)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  labs(title = "AA & BA Grade Count by Parents' Education Level",
+       x = "GPA",
+       y = "Count",
+       fill = "Parents Education level") +
+  theme_minimal()
+```
+
+
+
+
+### Ordinal Regression
+```{r}
+#######ordinal logistic regression model to predict GPA######
+# Select relevant columns for prediction
+features1 <- data[c("Student Age","Sex", 
+                    "Scholarship type",
+                    "Impact of your projects/activities on your success",
+                    "Expected Cumulative grade point average in the graduation (/4.00)",
+                    "Cumulative grade point average in the last semester (/4.00)",
+                    "Weekly study hours",
+                    "Reading frequency",
+                    "Additional work",
+                    "Transportation to the university",
+                    "Accommodation type in Cyprus",
+                    "Taking notes in classes")]
+
+output_grade_ordinal <- data$`OUTPUT Grade` # Output Grade is ordinal (e.g., "AA", "BA", "CB","Fail")
+
+# Train the ordinal logistic regression model
+ordinal_model <- polr(output_grade_ordinal ~ ., data = features1, method = "probit")
+
+ordinal_model
+summary(ordinal_model)
+
+# Data frame of estimated coefficients
+tidy(ordinal_model)
+
+# Performance metrics on training data
+glance(ordinal_model)
+
+performance_test<- data
+
+predict_data<-predict(ordinal_model, new_data = performance_test)
+
+predict_data
+
+# Generate predicted probabilities for each class
+predicted_probabilities <- predict(ordinal_model, newdata = performance_test, type = "probs")
+
+# Create ROC curves for each class
+roc_curves <- lapply(1:ncol(predicted_probabilities), function(i) {
+  roc(response = ifelse(performance_test$`OUTPUT Grade` == colnames(predicted_probabilities)[i], 1, 0),
+      predictor = predicted_probabilities[, i])
+})
+
+# Plot ROC curves for each class
+colors <- c("red", "green", "blue", "purple", "orange", "pink", "brown","black")  # Define colors
+for (i in 1:length(roc_curves)) {
+  plot(roc_curves[[i]], col = colors[i], add = i > 1, 
+       main = "ROC Curves for Ordinal Model",
+       xlab = "False Positive Rate", ylab = "True Positive Rate")
+  legend("bottomright", legend = colnames(predicted_probabilities), fill = colors[1:i])
+}
+```
+
+### Chi-square test
+```{r}
+
+#######Chi-square test######
+summary(data)
+chisq.test(data$`OUTPUT Grade`, data$`Student Age`)# significant relationship
+chisq.test(data$`OUTPUT Grade`, data$Sex)#significant relationship
+chisq.test(data$`OUTPUT Grade`, data$`Cumulative grade point average in the last semester (/4.00)`)#highly significant relationship 
+chisq.test(data$`OUTPUT Grade`, data$`Expected Cumulative grade point average in the graduation (/4.00)`)#significant relationship;statistically significant
+chisq.test(data$`OUTPUT Grade`, data$`Scholarship type`)#significant relationship
+chisq.test(data$`OUTPUT Grade`, data$`Impact of your projects/activities on your success`)#significant relationship
+
+
+chisq.test(data$`OUTPUT Grade`, data$`Weekly study hours`)#relationship might be worth further investigation or analysis
+
+chisq.test(data$`OUTPUT Grade`, data$`Transportation to the university`)#no significant relationship
+chisq.test(data$`OUTPUT Grade`, data$`Additional work`)#no significant relationship 
+```
+
+### Multiple Linear Regression model 1
+```{r}
+#######Multiple linear regression #########
+#create new data-set because we want keep the values in numbers for building the linear regression
+data2<-read_csv('studentdata.csv')
+colnames(data2) <- c("STUDENT ID", "Student Age", "Sex",
+                    "Graduated.high.school.type","Scholarship type",
+                    "Additional work","Regular.artistic.or.sports.activity",
+                    "Do you have a partner","Total salary if available",
+                    "Transportation to the university","Accommodation type in Cyprus",
+                    "Mothers.education","Fathers.education","Number of sisters/brothers",
+                    "Parental status","Mothers occupation","Fathers occupation",
+                    "Weekly study hours","Reading frequency","Reading frequency (scientific books/journals)",
+                    "Attendance to the seminars/conferences related to the department",
+                    "Impact of your projects/activities on your success",
+                    "Attendance to classes","Preparation to midterm exams 1",
+                    "Preparation to midterm exams 2","Taking notes in classes",
+                    "Listening in classes","Discussion improves my interest and success in the course",
+                    "Flip-classroom","Cumulative.grade.point.average.in.the.last.semester",
+                    "Expected Cumulative grade point average in the graduation (/4.00)",
+                    "Course ID","OUTPUT.Grade")
+
+# Perform linear regression
+linear_model <- lm(`OUTPUT.Grade` ~ `Graduated.high.school.type` + 
+                     `Regular.artistic.or.sports.activity` + 
+                     `Mothers.education` + 
+                     `Fathers.education` + 
+                     `Cumulative.grade.point.average.in.the.last.semester`, 
+                   data = data2)
+
+# Summary of the linear regression model
+summary(linear_model)
+
+#The math equation for the prediction is:
+# 0.2956+0.5062*Graduated.high.school.type -0.251*Regular.artistic.or.sports.activity +
+# 0.12*Mothers.education + 0.1*Fathers.education + 0.5*Cumulative.grade.point.average.in.the.last.semester
+#For each unit increase in the variable "Graduated high school type",and the rest remain constant, the predicted output grade increases by 0.5062 points. 
+#However, this coefficient is not statistically significant at the conventional levels (p-value = 0.127), 
+#meaning it might not have a significant impact on the output grade.
+#For each unit increase in the variable "Regular artistic or sports activity", the predicted output grade decreases by 0.2513 points. 
+#However, this coefficient is also not statistically significant (p-value = 0.484).
+#For each unit increase in the variables "Mothers education" and "Fathers education", the predicted output grade increases by 0.1286 and 0.1325 points, respectively. 
+#However, neither of these coefficients is statistically significant (p-values = 0.421 and 0.435).
+#For each unit increase in the variable "Cumulative grade point average in the last semester", the predicted output grade increases by 0.5464 points. 
+#This coefficient is statistically significant (p-value < 0.001), indicating a strong positive impact of the cumulative GPA on the output grade.
+
+#The multiple R-squared value (0.1277) indicates that approximately 12.77% of the variance in the output grade is explained by the predictors in the model.
+#The p-value associated with the F-statistic (p-value < 0.001) suggests that the overall 
+#model is statistically significant, meaning at least one of the predictors has a significant effect on the output grade.
+
+
+# Create a new data-frame for prediction
+prediction_data <- data.frame('Graduated.high.school.type' = data2$`Graduated.high.school.type`,
+                              'Regular.artistic.or.sports.activity' = data2$`Regular.artistic.or.sports.activity`,
+                              'Mothers.education' = data2$`Mothers.education`,
+                              'Fathers.education' = data2$`Fathers.education`,
+                              'Cumulative.grade.point.average.in.the.last.semester' = data2$`Cumulative.grade.point.average.in.the.last.semester`,
+                              'OUTPUT.Grade'= data2$OUTPUT.Grade)
+view(prediction_data)
+
+# Add predicted values to the prediction data and round to the nearest whole number
+prediction_data$predicted_grade <- round(predict(linear_model, newdata = prediction_data), 0)
+
+#Plot
+ggplot(prediction_data, aes(x = OUTPUT.Grade, fill = factor(predicted_grade))) +
+  geom_bar(position = "dodge") +
+  labs(title = "Comparison of Actual vs. Predicted Grades",
+       x = "output grade",
+       y = "Count",
+       fill = "Predicted Grade") +
+  scale_fill_manual(values = c("0" = "red", "1" = "purple", "2" = "skyblue", "3" = "tomato", "4" = "grey", "5" = "black", "6" = "pink", "7" = "brown"),
+                    breaks = c("0", "1", "2", "3", "4", "5", "6", "7"),
+                    labels = c("Fail", "DD", "DC", "CC", "CB", "BB", "BA", "AA"),
+                    name = "Predicted Grade") +
+  theme_minimal()
+
+# Create a data frame for comparison
+compare_data <- data.frame(
+  actual_Grade = factor(prediction_data$OUTPUT.Grade),
+  predicted_Grade = factor(prediction_data$predicted_grade)
+)
+
+# Create a contingency table
+compare_table <- table(compare_data$actual_Grade, compare_data$predicted_Grade)
+
+# Print the contingency table
+print(compare_table)
+```
+
+### correlation test
+```{r}
+########correlation test######
+cor.test(data2$OUTPUT.Grade,data2$Cumulative.grade.point.average.in.the.last.semester) #moderate positive corr
+cor.test(data2$OUTPUT.Grade,data2$`Additional work`)#weak positive
+cor.test(data2$OUTPUT.Grade,data2$`Student Age`)#weak negative
+cor.test(data2$OUTPUT.Grade,data2$`Do you have a partner`)#weak negative
+cor.test(data2$OUTPUT.Grade,data2$`Parental status`)#weak positive
+cor.test(data2$OUTPUT.Grade,data2$`Accommodation type in Cyprus`)#weak positive
+cor.test(data2$OUTPUT.Grade,data2$`Transportation to the university`)#weak negative
+cor.test(data2$OUTPUT.Grade,data2$Mothers.education)#weak positive
+cor.test(data2$OUTPUT.Grade,data2$`Fathers occupation`)#weak negative
+cor.test(data2$OUTPUT.Grade,data2$`Mothers occupation`)#weak negative
+```
+### Multiple linear regression model 2
+```{r}
+########Multiple linear regression model 2######
+data2$Sex <- factor(data2$Sex,c("1", "2"), labels = c( "Female","Male"))
+linear_model2 <- lm(`OUTPUT.Grade` ~ `Student Age` + 
+                      `Sex`+
+                      `Additional work` +
+                      `Weekly study hours`+
+                      `Transportation to the university`+
+                      `Accommodation type in Cyprus`+
+                      `Preparation to midterm exams 1` + 
+                      `Preparation to midterm exams 2`+
+                      `Reading frequency` +
+                      `Student Age`*`Reading frequency`+
+                      `Additional work`*`Listening in classes`*`Taking notes in classes`+
+                      `Preparation to midterm exams 1`*`Preparation to midterm exams 2`+
+                      `Cumulative.grade.point.average.in.the.last.semester`, 
+                    data = data2)
+# Summary of the linear regression model
+summary(linear_model2)
+
+#Intercept (Constant): The intercept term (15.5228) represents the expected value of the outcome variable when 
+#all predictor variables are zero.
+
+#Sex (Male): Being male is significant (p-value < 0.001), with a coefficient of 1.5994. On average, 
+#males have a higher outcome value compared to females.
+
+#Additional Work: Having additional work experience is significant (p-value = 0.003), with a coefficient of -13.7933. 
+#This suggests that students with additional work experience tend to have lower outcomes.
+
+#Weekly Study Hours: Weekly study hours, while not statistically significant (p-value = 0.153), have a coefficient of -0.2784. This suggests a negative relationship, although it's not strong enough to be considered significant at conventional levels.
+
+#Transportation to the University: The type of transportation to the university is significant (p-value = 0.009), 
+#with a coefficient of -0.4065. Certain transportation methods are associated with lower outcomes.
+
+#Accommodation Type in Cyprus: Accommodation type is not statistically significant (p-value = 0.116), 
+#indicating that it might not have a significant impact on the outcome in this model.
+
+#Preparation to Midterm Exams, Reading Frequency, Listening in Classes, Taking Notes in Classes: These variables, 
+#either individually or in interaction with others, are significant predictors, indicating that students' study habits and preparation methods are related to the outcome variable.
+
+#Cumulative Grade Point Average in the Last Semester: Cumulative GPA in the last semester is significant (p-value = 0.004) 
+#with a coefficient of 0.3744. Higher GPA is associated with higher outcomes.
+
+#The overall model (Multiple R-squared: 0.4397) explains approximately 44% of the variance in the outcome variable. 
+#The adjusted R-squared accounts for the number of predictors in the model, providing a more accurate measure of 
+#the model's goodness-of-fit when considering the number of predictors. 
+#The F-statistic tests the overall significance of the model and indicates 
+#that the model is statistically significant (p-value < 0.001).
+
+# Create a new data-frame for prediction
+prediction_data2 <- data.frame('Cumulative.grade.point.average.in.the.last.semester' = data2$`Cumulative.grade.point.average.in.the.last.semester`,
+                               'OUTPUT.Grade'= data2$OUTPUT.Grade)
+view(prediction_data2)
+
+# Add predicted values to the prediction data and round to the nearest whole number
+prediction_data2$predicted_grade <- round(predict(linear_model2, newdata = data2), 0)
+
+#Plot
+ggplot(prediction_data2, aes(x = factor(OUTPUT.Grade, levels = c("0", "1", "2", "3", "4", "5", "6", "7")), fill = factor(predicted_grade))) +
+  geom_bar() +
+  labs(title = "Composition of Predicted Grades within Actual Grades",
+       x = "Output Grade",
+       y = "Count",
+       fill = "Predicted Grade") +
+  scale_fill_manual(values = c("0" = "red", "1" = "purple", "2" = "skyblue", "3" = "tomato", 
+                               "4" = "grey", "5" = "black", "6" = "pink", "7" = "brown"),
+                    breaks = c("0", "1", "2", "3", "4", "5", "6", "7"),
+                    labels = c("Fail", "DD", "DC", "CC", "CB", "BB", "BA", "AA"),
+                    name = "Predicted Grade") +
+  scale_x_discrete(labels = c("0" = "Fail", "1" = "DD", "2" = "DC", "3" = "CC", "4" = "CB", "5" = "BB", "6" = "BA", "7" = "AA")) +
+  theme_minimal()
+
+#change levels
+prediction_data2$`OUTPUT.Grade`<-factor(prediction_data2$`OUTPUT.Grade`,c("0","1","2","3","4","5","6","7"),labels = c("Fail","DD","DC","CC","CB","BB","BA","AA"))
+prediction_data2$predicted_grade<-factor(prediction_data2$`predicted_grade`,c("0","1","2","3","4","5","6","7"),labels = c("Fail","DD","DC","CC","CB","BB","BA","AA"))
+#Filter the data for grades from Fail to AA
+filtered_data <- subset(prediction_data2, predicted_grade %in% c("Fail","DD","DC","CC","CB","BB","BA","AA"))
+
+# Create a text-based comparison
+comparison_table <- table(filtered_data$OUTPUT.Grade, filtered_data$predicted_grade)
+print(comparison_table)
+```
+
+###Assumptions
+```{r}
+########Assumptions######
+# Linearity Assumption
+# Scatter plots for each predictor variable against the residuals
+ols_plot_resid_fit(linear_model2)
+
+#NORMALITY
+ols_plot_resid_qq(linear_model2)
+#the data is not normally distributed
+#The points do not fall along the 45-degree reference line,
+#indicating that the quarantines of the data are not the same as the quarantines of the normal distribution
+#the plot shows that the data is skewed to the left, with more extreme values in the left tail than in the right tail. 
+#This suggests that the median of the data is less than the mean
+
+ols_plot_resid_hist(linear_model2)
+#the majority of residuals falling close to zero,it suggests that the model is making good predictions on average
+#However, there are a few outlines in the histogram, with some residuals falling far from zero,
+#This suggests that the model is not perfect, and that there are some cases where it is making large errors
+
+ols_test_normality(linear_model2)#test fail to reject the null hypothesis 
+#Shapiro-Will:no strong evidence to conclude that the residuals are not normally distributed.
+#Alamogordo-Smirnov :no significant departure from normality
+#Cranmer-von Mises:there is a significant departure from normality
+#Anderson-Darling:the data does not significantly deviate from a normal distribution
+
+#HETEROSCEDASTICITY
+ols_plot_resid_fit(linear_model2)
+
+ols_test_breusch_pagan(linear_model2)
+#The variance of the residuals is constant (homoskedasticity).
+#The variance of the residuals is not constant (heteroskedasticity)
+#The p-value (0.2712939) associated with the Chi-square statistic is greater than the typical significance level (such as α = 0.05). 
+#Therefore, do not have enough evidence to reject the null hypothesis.
+#Based on the Breusch-Pagan test, there is no significant evidence to suggest that the variance of the residuals is 
+#not constant across different levels of the independent variables. Hence, you do not have sufficient grounds to 
+#conclude that heteroskedasticity is present in your regression model.
+ols_test_breusch_pagan(linear_model2, rhs = TRUE)
+#there isn't enough evidence to conclude that 
+#there is a significant association between the categorical variables being analyzed in the chi-squared test.
+
+
+#Heteroskedasticity
+ols_test_f(linear_model2)
+#do not have sufficient evidence to conclude that the variance of errors is not homogenous across the levels 
+#of the independent variables
+ols_test_f(linear_model2, rhs = TRUE)
+```
+
+## Column {data-width="350"}
+
+### Data Source {data-height=200}
+The dataset that we are using for this study is the “Student Performace” data which was discovered by the group on Kaggle and serves as our sole source of data for the whole project. This dataset includes an extensive range of data about students, such as the type of high school they attended, their participation in consistent artistic or athletic endeavours, the educational status of their parents, and their GPA.
+
+### General Analysis of Student's Grades  {.no-padding}
+
+```{r}
+# Color
+custom_colors <- viridis::mako(n = 8)
+
+Grade_counts <- data %>%
+  group_by(`OUTPUT Grade`) %>%
+  summarise(Student = n())
+
+hchart(Grade_counts, 'column', hcaes(x = `OUTPUT Grade`, y = Student, color = custom_colors)) %>%
+  hc_add_theme(hc_theme_google()) %>%
+  hc_tooltip(pointFormat = '<b>Number of Students: </b> {point.y} <br>') %>%
+  hc_title(text = 'Student Grades', 
+           style = list(fontSize = '25px', fontWeight = 'bold')) %>%
+  hc_credits(enabled = TRUE, text ='@Broncos')
+```
